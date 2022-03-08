@@ -5,41 +5,65 @@ import Head from 'next/head'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useContext, useEffect, useState } from 'react'
 
-import { fetchCoffeStores } from '../../lib/coffe-stores'
+import { fetchCoffeeStores } from '../../lib/coffee-stores'
+import { StoreContext } from '../../store/context'
 import styles from '../../styles/coffee-store.module.css'
+import { isEmpty } from '../../utils'
 
 export async function getStaticProps(staticProps) {
   const params = staticProps.params
-
-  const coffeStores = await fetchCoffeStores()
-  const findCoffeStoreById = coffeStores.find(coffeStore => {
-    return coffeStore.id === params.id
+  const coffeeStores = await fetchCoffeeStores()
+  const findCoffeeStoreById = coffeeStores.find(coffeeStore => {
+    return coffeeStore.id.toString() === params.id
   })
+
   return {
     props: {
-      coffeStore: findCoffeStoreById ? findCoffeStoreById : {}
+      coffeeStore: findCoffeeStoreById ? findCoffeeStoreById : {}
     }
   }
 }
 export async function getStaticPaths() {
-  const coffeStores = await fetchCoffeStores()
+  const coffeeStores = await fetchCoffeeStores()
+  const paths = coffeeStores.map(coffeeStore => {
+    return {
+      params: {
+        id: coffeeStore.id.toString()
+      }
+    }
+  })
   return {
-    paths: coffeStores.map(coffeStore => `/coffee-store/${coffeStore.id}`),
+    paths,
     fallback: true
   }
 }
-const coffeStore = ({ coffeStore }) => {
+const coffeeStore = initialProps => {
   const router = useRouter()
-
+  const id = router.query.id
+  const [coffeeStore, setCoffeeStore] = useState(initialProps.coffeeStore)
+  const {
+    state: { coffeeStores }
+  } = useContext(StoreContext)
   const handleUpvoteButton = () => {
     console.log('2')
   }
+  useEffect(() => {
+    if (isEmpty(initialProps.coffeeStore)) {
+      if (coffeeStores.length > 0) {
+        const findCoffeeStoreById = coffeeStores.find(coffeeStore => {
+          return coffeeStore.id.toString() === id
+        })
+        setCoffeeStore(findCoffeeStoreById)
+      }
+    }
+  }, [id])
   if (router.isFallback) {
     return <div>Loading...</div>
   }
-  console.log(coffeStore)
-  const { name, address, neighborhood } = coffeStore
+
+  const { name, address, imgUrl, neighborhood } = coffeeStore
   return (
     <div className={styles.layout}>
       <Head>
@@ -55,7 +79,8 @@ const coffeStore = ({ coffeStore }) => {
           </div>
           <Image
             src={
-              'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'
+              imgUrl ||
+              'https://images.unsplash.com/photo-1498804103079-a6351b050096?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2468&q=80'
             }
             width={600}
             height={360}
@@ -88,4 +113,4 @@ const coffeStore = ({ coffeStore }) => {
   )
 }
 
-export default coffeStore
+export default coffeeStore

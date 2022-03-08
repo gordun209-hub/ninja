@@ -8,37 +8,36 @@ import { useContext, useEffect } from 'react'
 import Banner from '../components/Banner'
 import Card from '../components/Card.jsx'
 import useTrackLocation from '../hooks/use-track-location'
-import { fetchCoffeStores } from '../lib/coffe-stores'
+import { fetchCoffeeStores } from '../lib/coffee-stores'
+import { ACTION_TYPES, StoreContext } from '../store/context'
 import styles from '../styles/Home.module.css'
-import { ACTION_TYPES, StoreContext } from './_app'
 
 export async function getStaticProps() {
-  const coffeStoresData = await fetchCoffeStores()
+  const coffeeStoresData = await fetchCoffeeStores()
   return {
     props: {
-      coffeStoresData
+      coffeeStoresData
     }
   }
 }
 export default function Home() {
   const { handleTrackLocation, locationErrorMsg, isFindingLocation } =
     useTrackLocation()
-  // const [coffeStores, setCoffeStores] = useState('')
   const handleOnClick = () => {
     handleTrackLocation()
   }
   const { dispatch, state } = useContext(StoreContext)
-  const { coffeStores, latLong } = state
+  const { coffeeStores, latLong } = state
   useEffect(async () => {
     if (latLong) {
       try {
-        const fetchedCoffeStores = await fetchCoffeStores(
+        const fetchedCoffeeStores = await fetchCoffeeStores(
           latLong.replace(/\s/g, ''),
           30
         )
         dispatch({
-          type: ACTION_TYPES.SET_COFFE_STORES,
-          payload: { coffeStores: fetchedCoffeStores }
+          type: ACTION_TYPES.SET_COFFEE_STORES,
+          payload: { coffeeStores: fetchedCoffeeStores }
         })
       } catch (error) {
         console.log({ error })
@@ -62,11 +61,12 @@ export default function Home() {
           <div className={styles.heroImage}>
             <Image src='/../public/hero-image.png' width={700} height={400} />
           </div>
-          {coffeStores && (
+          {coffeeStores.length > 0 && (
             <>
               <h2 className={styles.heading2}> stores near me</h2>
               <div className={styles.cardLayout}>
-                {coffeStores.map(coffeStor => {
+                {coffeeStores.map(coffeStor => {
+                  console.log(coffeStor)
                   return (
                     <Card
                       key={coffeStor.id}
