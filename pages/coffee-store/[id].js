@@ -1,4 +1,5 @@
 /* eslint-disable react-hooks/rules-of-hooks */
+
 import cls from 'classnames'
 import Head from 'next/head'
 import Image from 'next/image'
@@ -12,12 +13,12 @@ export async function getStaticProps(staticProps) {
   const params = staticProps.params
 
   const coffeStores = await fetchCoffeStores()
-  console.log(coffeStores, 'laaaaaaaaaaaaaaaaa')
+  const findCoffeStoreById = coffeStores.find(coffeStore => {
+    return coffeStore.id === params.id
+  })
   return {
     props: {
-      coffeStore: coffeStores.find(coffeStore => {
-        return coffeStore.id === params.id
-      })
+      coffeStore: findCoffeStoreById ? findCoffeStoreById : {}
     }
   }
 }

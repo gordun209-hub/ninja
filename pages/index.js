@@ -1,12 +1,16 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable react/jsx-key */
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import Head from 'next/head'
 import Image from 'next/image'
+import { useContext, useEffect } from 'react'
 
 import Banner from '../components/Banner'
 import Card from '../components/Card.jsx'
+import useTrackLocation from '../hooks/use-track-location'
 import { fetchCoffeStores } from '../lib/coffe-stores'
 import styles from '../styles/Home.module.css'
+import { ACTION_TYPES, StoreContext } from './_app'
 
 export async function getStaticProps() {
   const coffeStoresData = await fetchCoffeStores()
@@ -16,12 +20,31 @@ export async function getStaticProps() {
     }
   }
 }
-
-export default function Home({ coffeStoresData }) {
+export default function Home() {
+  const { handleTrackLocation, locationErrorMsg, isFindingLocation } =
+    useTrackLocation()
+  // const [coffeStores, setCoffeStores] = useState('')
   const handleOnClick = () => {
-    console.log('hi banner')
+    handleTrackLocation()
   }
-
+  const { dispatch, state } = useContext(StoreContext)
+  const { coffeStores, latLong } = state
+  useEffect(async () => {
+    if (latLong) {
+      try {
+        const fetchedCoffeStores = await fetchCoffeStores(
+          latLong.replace(/\s/g, ''),
+          30
+        )
+        dispatch({
+          type: ACTION_TYPES.SET_COFFE_STORES,
+          payload: { coffeStores: fetchedCoffeStores }
+        })
+      } catch (error) {
+        console.log({ error })
+      }
+    }
+  }, [latLong])
   return (
     <div>
       <div className={styles.container}>
@@ -31,23 +54,24 @@ export default function Home({ coffeStoresData }) {
         </Head>
         <main className={styles.main}>
           <h1 className={styles.title}>Coffe Connoiseur</h1>
-          <Banner buttonText='View stores nearby' onClick={handleOnClick} />
+          <Banner
+            buttonText={isFindingLocation ? 'locating' : 'wiev stores nearby'}
+            onClick={handleOnClick}
+          />
+          {locationErrorMsg && <p>Something went wrong : {locationErrorMsg}</p>}
           <div className={styles.heroImage}>
             <Image src='/../public/hero-image.png' width={700} height={400} />
           </div>
-          {coffeStoresData && (
+          {coffeStores && (
             <>
-              <h2 className={styles.heading2}>Torronto stores</h2>
+              <h2 className={styles.heading2}> stores near me</h2>
               <div className={styles.cardLayout}>
-                {coffeStoresData.map(coffeStor => {
+                {coffeStores.map(coffeStor => {
                   return (
                     <Card
                       key={coffeStor.id}
                       name={coffeStor.name}
-                      imgUrl={
-                        coffeStor.imgUrl ||
-                        'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'
-                      }
+                      imgUrl={coffeStor.imgUrl}
                       href={`/coffee-store/${coffeStor.id}`}
                       className={styles.card}
                     />
