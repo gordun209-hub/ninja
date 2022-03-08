@@ -6,6 +6,7 @@ import Link from 'next/link'
 import styles from './Card.module.css'
 
 const Card = props => {
+  console.log(props)
   return (
     <Link href={props.href}>
       <a className={styles.cardLink}>

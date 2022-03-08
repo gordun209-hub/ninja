@@ -5,22 +5,26 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 
-import coffeStoreData from '../../data/coffee-stores.json'
+import { fetchCoffeStores } from '../../lib/coffe-stores'
 import styles from '../../styles/coffee-store.module.css'
 
-export function getStaticProps(staticProps) {
+export async function getStaticProps(staticProps) {
   const params = staticProps.params
+
+  const coffeStores = await fetchCoffeStores()
+  console.log(coffeStores, 'laaaaaaaaaaaaaaaaa')
   return {
     props: {
-      coffeStore: coffeStoreData.find(coffeStore => {
-        return coffeStore.id.toString() === params.id
+      coffeStore: coffeStores.find(coffeStore => {
+        return coffeStore.id === params.id
       })
     }
   }
 }
-export function getStaticPaths() {
+export async function getStaticPaths() {
+  const coffeStores = await fetchCoffeStores()
   return {
-    paths: coffeStoreData.map(coffeStore => `/coffee-store/${coffeStore.id}`),
+    paths: coffeStores.map(coffeStore => `/coffee-store/${coffeStore.id}`),
     fallback: true
   }
 }
@@ -33,8 +37,8 @@ const coffeStore = ({ coffeStore }) => {
   if (router.isFallback) {
     return <div>Loading...</div>
   }
-
-  const { imgUrl, address, name, neighbourhood } = coffeStore
+  console.log(coffeStore)
+  const { name, address, neighborhood } = coffeStore
   return (
     <div className={styles.layout}>
       <Head>
@@ -49,7 +53,9 @@ const coffeStore = ({ coffeStore }) => {
             <h1 className={styles.name}>{name}</h1>
           </div>
           <Image
-            src={imgUrl}
+            src={
+              'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'
+            }
             width={600}
             height={360}
             className={styles.storeImg}
@@ -61,10 +67,12 @@ const coffeStore = ({ coffeStore }) => {
             <Image src='/static/icons/places.svg' width='24' height='24' />
             <p className={styles.text}>{address}</p>
           </div>
-          <div className={styles.iconWrapper}>
-            <Image src='/static/icons/nearMe.svg' width='24' height='24' />
-            <p className={styles.text}>{neighbourhood}</p>
-          </div>
+          {neighborhood && (
+            <div className={styles.iconWrapper}>
+              <Image src='/static/icons/nearMe.svg' width='24' height='24' />
+              <p className={styles.text}>{neighborhood}</p>
+            </div>
+          )}
           <div className={styles.iconWrapper}>
             <Image src='/static/icons/star.svg' width='24' height='24' />
             <p className={styles.text}>1</p>
@@ -72,7 +80,7 @@ const coffeStore = ({ coffeStore }) => {
           <button className={styles.upvoteButton} onClick={handleUpvoteButton}>
             Up Vote
           </button>
-          <p>{neighbourhood}</p>
+          <p>{neighborhood}</p>
         </div>
       </div>
     </div>
