@@ -99,6 +99,7 @@ const CoffeeStore = initialProps => {
     }
   }, [coffeeStores, id, initialProps, initialProps.coffeeStore])
 
+  console.log(coffeeStore)
   const { address, name, neighbourhood, imgUrl } = coffeeStore
 
   const [votingCount, setVotingCount] = useState(0)
@@ -109,7 +110,7 @@ const CoffeeStore = initialProps => {
     if (data && data.length > 0) {
       setCoffeeStore(data[0])
 
-      setVotingCount(data[0].voting)
+      setVotingCount(Number(data[0].voting))
     }
   }, [data])
 
