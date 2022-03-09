@@ -1,9 +1,8 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable react/jsx-key */
-/* eslint-disable jsx-a11y/anchor-is-valid */
 import Head from 'next/head'
 import Image from 'next/image'
-import { useContext, useEffect } from 'react'
+import { useContext, useEffect, useState } from 'react'
 
 import Banner from '../components/Banner'
 import Card from '../components/Card.jsx'
@@ -12,76 +11,126 @@ import { fetchCoffeeStores } from '../lib/coffee-stores'
 import { ACTION_TYPES, StoreContext } from '../store/context'
 import styles from '../styles/Home.module.css'
 
-export async function getStaticProps() {
-  const coffeeStoresData = await fetchCoffeeStores()
+export async function getStaticProps(context) {
+  const coffeeStores = await fetchCoffeeStores()
   return {
     props: {
-      coffeeStoresData
-    }
+      coffeeStores
+    } // will be passed to the page component as props
   }
 }
-export default function Home() {
+
+export default function Home(props) {
   const { handleTrackLocation, locationErrorMsg, isFindingLocation } =
     useTrackLocation()
-  const handleOnClick = () => {
-    handleTrackLocation()
-  }
+
+  // const [coffeeStores, setCoffeeStores] = useState("");
+
+  const [coffeeStoresError, setCoffeeStoresError] = useState(null)
+
   const { dispatch, state } = useContext(StoreContext)
+
   const { coffeeStores, latLong } = state
+
   useEffect(async () => {
     if (latLong) {
       try {
-        const fetchedCoffeeStores = await fetchCoffeeStores(
-          latLong.replace(/\s/g, ''),
-          30
+        const response = await fetch(
+          `/api/getCoffeeStoresByLocation?latLong=${latLong}&limit=30`
         )
+
+        const coffeeStores = await response.json()
+
+        // setCoffeeStores(fetchedCoffeeStores);
         dispatch({
           type: ACTION_TYPES.SET_COFFEE_STORES,
-          payload: { coffeeStores: fetchedCoffeeStores }
+          payload: {
+            coffeeStores
+          }
         })
+        setCoffeeStoresError('')
+        //set coffee stores
       } catch (error) {
-        console.log({ error })
+        //set error
+        setCoffeeStoresError(error.message)
       }
     }
   }, [latLong])
+
+  const handleOnBannerBtnClick = () => {
+    handleTrackLocation()
+  }
+
   return (
-    <div>
-      <div className={styles.container}>
-        <Head>
-          <title>Coffe</title>
-          <link rel='icon' href='/favicon.ico' />
-        </Head>
-        <main className={styles.main}>
-          <h1 className={styles.title}>Coffe Connoiseur</h1>
-          <Banner
-            buttonText={isFindingLocation ? 'locating' : 'wiev stores nearby'}
-            onClick={handleOnClick}
+    <div className={styles.container}>
+      <Head>
+        <title>Coffee Connoisseur</title>
+        <link rel='icon' href='/favicon.ico' />
+
+        <meta
+          name='description'
+          content='allows you to discover coffee stores'
+        ></meta>
+      </Head>
+
+      <main className={styles.main}>
+        <Banner
+          buttonText={isFindingLocation ? 'Locating...' : 'View stores nearby'}
+          handleOnClick={handleOnBannerBtnClick}
+        />
+        {locationErrorMsg && <p>Something went wrong: {locationErrorMsg}</p>}
+        {coffeeStoresError && <p>Something went wrong: {coffeeStoresError}</p>}
+        <div className={styles.heroImage}>
+          <Image
+            src='/static/hero-image.png'
+            width={700}
+            height={400}
+            alt='hero image'
           />
-          {locationErrorMsg && <p>Something went wrong : {locationErrorMsg}</p>}
-          <div className={styles.heroImage}>
-            <Image src='/../public/hero-image.png' width={700} height={400} />
+        </div>
+
+        {coffeeStores.length > 0 && (
+          <div className={styles.sectionWrapper}>
+            <h2 className={styles.heading2}>Stores near me</h2>
+            <div className={styles.cardLayout}>
+              {coffeeStores.map(coffeeStore => {
+                return (
+                  <Card
+                    key={coffeeStore.id}
+                    name={coffeeStore.name}
+                    imgUrl={
+                      coffeeStore.imgUrl ||
+                      'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'
+                    }
+                    href={`/coffee-store/${coffeeStore.id}`}
+                  />
+                )
+              })}
+            </div>
           </div>
-          {coffeeStores.length > 0 && (
-            <>
-              <h2 className={styles.heading2}> stores near me</h2>
-              <div className={styles.cardLayout}>
-                {coffeeStores.map(coffeStor => {
-                  console.log(coffeStor)
-                  return (
-                    <Card
-                      key={coffeStor.id}
-                      name={coffeStor.name}
-                      imgUrl={coffeStor.imgUrl}
-                      href={`/coffee-store/${coffeStor.id}`}
-                      className={styles.card}
-                    />
-                  )
-                })}
-              </div>
-            </>
-          )}
-        </main>
-      </div>
+        )}
+
+        {props.coffeeStores.length > 0 && (
+          <div className={styles.sectionWrapper}>
+            <h2 className={styles.heading2}>Toronto stores</h2>
+            <div className={styles.cardLayout}>
+              {props.coffeeStores.map(coffeeStore => {
+                return (
+                  <Card
+                    key={coffeeStore.id}
+                    name={coffeeStore.name}
+                    imgUrl={
+                      coffeeStore.imgUrl ||
+                      'https://images.unsplash.com/photo-1504753793650-d4a2b783c15e?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=2000&q=80'
+                    }
+                    href={`/coffee-store/${coffeeStore.id}`}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   )
 }
